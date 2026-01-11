@@ -4,7 +4,6 @@ import { Coin, ChartData } from '@/types';
 const API_BASE = 'https://api.coingecko.com/api/v3';
 
 export const coinGeckoApi = {
-    // Get trending/popular coins
     async getCoins(): Promise<Coin[]> {
         try {
             const response = await axios.get(`${API_BASE}/coins/markets`, {
@@ -23,7 +22,6 @@ export const coinGeckoApi = {
         }
     },
 
-    // Search coins
     async searchCoins(query: string): Promise<Coin[]> {
         try {
             const allCoins = await this.getCoins();
@@ -38,7 +36,6 @@ export const coinGeckoApi = {
         }
     },
 
-    // Get coin chart data
     async getCoinChart(coinId: string, days: number = 7): Promise<ChartData[]> {
         try {
             const response = await axios.get(`${API_BASE}/coins/${coinId}/market_chart`, {
