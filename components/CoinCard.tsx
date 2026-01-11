@@ -5,7 +5,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency, formatPercent } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 interface CoinCardProps {
     portfolioCoin: PortfolioCoin;
@@ -32,7 +31,7 @@ export default function CoinCard({ portfolioCoin, onRemove }: CoinCardProps) {
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <Image
+                    <img
                         src={coin.image}
                         alt={coin.name}
                         width={40}

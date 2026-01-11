@@ -6,7 +6,6 @@ import { coinGeckoApi } from '@/lib/api';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Search, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 
 interface AddCoinModalProps {
     isOpen: boolean;
@@ -94,7 +93,7 @@ export default function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalPro
                                         onClick={() => setSelectedCoin(coin)}
                                         className="w-full flex items-center gap-3 p-3 rounded-lg bg-black/30 hover:bg-[var(--primary)]/10 border border-transparent hover:border-[var(--primary)] transition-all"
                                     >
-                                        <Image
+                                        <img
                                             src={coin.image}
                                             alt={coin.name}
                                             width={32}
@@ -116,7 +115,7 @@ export default function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalPro
                 ) : (
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 p-4 rounded-lg bg-black/30 border border-[var(--primary)]">
-                            <Image
+                            <img
                                 src={selectedCoin.image}
                                 alt={selectedCoin.name}
                                 width={40}
