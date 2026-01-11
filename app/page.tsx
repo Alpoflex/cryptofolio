@@ -1,65 +1,156 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { PortfolioCoin, Coin } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency, formatPercent } from '@/lib/utils';
+import CoinCard from '@/components/CoinCard';
+import AddCoinModal from '@/components/AddCoinModal';
+import PriceChart from '@/components/PriceChart';
+import LanguageToggle from '@/components/LanguageToggle';
+import { Plus, TrendingUp, Wallet, DollarSign } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+
+const STORAGE_KEY = 'cryptofolio-portfolio';
 
 export default function Home() {
+  const { t } = useLanguage();
+  const [portfolio, setPortfolio] = useState<PortfolioCoin[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setPortfolio(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to load portfolio', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (portfolio.length > 0 || localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(portfolio));
+    }
+  }, [portfolio]);
+
+  const handleAddCoin = (coin: Coin, amount: number, buyPrice: number) => {
+    const newCoin: PortfolioCoin = { coin, amount, buyPrice };
+    setPortfolio([...portfolio, newCoin]);
+  };
+
+  const handleRemoveCoin = (coinId: string) => {
+    setPortfolio(portfolio.filter((pc) => pc.coin.id !== coinId));
+  };
+
+  const totalValue = portfolio.reduce(
+    (sum, pc) => sum + pc.coin.current_price * pc.amount,
+    0
+  );
+
+  const totalProfit = portfolio.reduce(
+    (sum, pc) => sum + (pc.coin.current_price - pc.buyPrice) * pc.amount,
+    0
+  );
+
+  const totalProfitPercent = portfolio.reduce((sum, pc) => {
+    const invested = pc.buyPrice * pc.amount;
+    return invested > 0 ? sum + invested : sum;
+  }, 0);
+
+  const profitPercent = totalProfitPercent > 0 ? (totalProfit / totalProfitPercent) * 100 : 0;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen p-6 md:p-12">
+      <LanguageToggle />
+
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="text-center mb-12">
+          <h1 className="text-6xl md:text-7xl font-black text-[var(--primary)] neon-text mb-3 glitch uppercase tracking-tighter">
+            {t.title}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-[var(--secondary)] text-lg md:text-xl neon-text-cyan uppercase tracking-widest">
+            {t.subtitle}
           </p>
+        </header>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="cyber-card rounded-xl p-6 pulse-glow">
+            <div className="flex items-center gap-3 mb-2">
+              <Wallet className="text-[var(--secondary)]" size={24} />
+              <h3 className="text-gray-400 text-sm uppercase tracking-wider">{t.portfolio.totalValue}</h3>
+            </div>
+            <p className="text-3xl font-black text-white">{formatCurrency(totalValue)}</p>
+          </div>
+
+          <div className="cyber-card rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className={totalProfit >= 0 ? 'text-[var(--primary)]' : 'text-red-500'} size={24} />
+              <h3 className="text-gray-400 text-sm uppercase tracking-wider">{t.portfolio.totalProfit}</h3>
+            </div>
+            <p className={`text-3xl font-black ${totalProfit >= 0 ? 'text-[var(--primary)]' : 'text-red-500'}`}>
+              {formatCurrency(totalProfit)}
+            </p>
+            <p className={`text-sm mt-1 ${totalProfit >= 0 ? 'text-[var(--primary)]' : 'text-red-500'}`}>
+              {formatPercent(profitPercent)}
+            </p>
+          </div>
+
+          <div className="cyber-card rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <DollarSign className="text-[var(--accent)]" size={24} />
+              <h3 className="text-gray-400 text-sm uppercase tracking-wider">{t.portfolio.title}</h3>
+            </div>
+            <p className="text-3xl font-black text-white">{portfolio.length}</p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="mt-3 w-full cyber-btn rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-wider"
+            >
+              <Plus size={16} className="inline mr-2" />
+              {t.portfolio.addCoin}
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Portfolio */}
+        {portfolio.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <AnimatePresence>
+                {portfolio.map((pc) => (
+                  <CoinCard
+                    key={pc.coin.id}
+                    portfolioCoin={pc}
+                    onRemove={handleRemoveCoin}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {portfolio[0] && <PriceChart coinId={portfolio[0].coin.id} />}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg mb-6">{t.portfolio.empty}</p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="cyber-btn rounded-lg px-8 py-4 text-lg font-bold uppercase tracking-wider inline-flex items-center gap-3"
+            >
+              <Plus size={24} />
+              {t.portfolio.addCoin}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <AddCoinModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddCoin}
+      />
+    </main>
   );
 }
